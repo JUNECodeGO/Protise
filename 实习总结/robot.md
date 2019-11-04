@@ -1116,3 +1116,97 @@ css单位
         document.body.removeChild(link)
       })
 ```
+4. froala富文本 上传本地图片 链接 转为Base64格式传给后台
+```
+function handleChange() {
+// 拿到富文本中的html字符串
+      var tempStr = this.$refs.froalaEditor.getHtml()
+      // 正则获取 <img>中的 src=""
+      var reg = /src=[\"\']([^\"\' ]+)/g
+      if (reg.test(tempStr)) {
+        var self = this
+        var n = 0
+        const temp = tempStr.match(reg)
+        // async 函数返回的是promise
+        var a = async function() {
+          for (var i = 0; i < temp.length; i++) {
+          // 将n张已经base64的图片 存入数组
+          // await 等待baseImg异步执行完
+            temp[i] = await self.baseImg(temp[i].replace('src="', '')
+          }
+        }
+        // 拿到所有转换后的图片之后替换原来图片链接
+        a().then(function() {
+          tempStr = tempStr.replace(reg, 'src="' + temp[n++])
+          // 此处注意 在请求的过程中浏览器不会替换+等特殊的符号为空串拿给后台，因此后台返回的base64是不可以正常渲染的
+          // 此处包括table的html都是会被后台报错 因此传递富文本字符串最好都全部进行encodeURIComponent（）
+          self.listQueryEditor.platDesc = encodeURIComponent(tempStr)
+          self.handleSaveEditor()
+        })
+      } else {
+        this.listQueryEditor.platDesc = encodeURIComponent(tempStr)
+        this.handleSaveEditor()
+      }
+    },
+// img 图片链接
+function baseImg(img) {
+   var image = new Image()
+   image.src = img
+   image.setAttribute('crossOrigin', 'Anonymous')
+   var getBase64Image = function(image) {
+     var canvas = document.createElement('canvas')
+     canvas.width = image.width
+     canvas.height = image.height
+     var ctx = canvas.getContext('2d')
+     ctx.drawImage(image, 0, 0, image.width, image.height)
+     var ext = image.src.substring(image.src.lastIndexOf('.') + 1).toLowerCase()
+     var dataUrl = canvas.toDataURL('image/' + ext)
+     return dataUrl
+   }
+   return new Promise(function(resolve) {
+   // 此处因为image.onload为异步，所以要有promise，否则外部拿不到dataUrl，因为onload还未完成
+     image.onload = function() {
+       resolve(getBase64Image(image))
+     }
+   })
+ }
+ ```
+2.初始化组件失败
+情况：由于组件还未加载完成，率先调用组件的method方法，后台报错 function undefined
+解决：
+A:
+```
+  var self = this
+        setTimeout(function() {
+          self.$refs.froalaEditors.setHtml(str)
+        }, 1)
+```
+B:
+```
+ this.$nextTick(() => {
+  this.$refs.froalaEditor1.setHtml(str)
+ })
+```
+
+3.element-UI中的cascader组件 中的方法调用失败
+情况： 由于在for循环中调用了cascader组件，因此$refs并不是唯一
+解决：
+```
+this.$refs['myCascader'][index].getCheckedNodes()[0]
+```
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+

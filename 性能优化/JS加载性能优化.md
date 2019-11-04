@@ -75,5 +75,3 @@ xhr.onreadystatechange = function(){
 + 兼容性好
 >缺点
 + 资源需要在同个域下,不可以跨域执行
-
-
